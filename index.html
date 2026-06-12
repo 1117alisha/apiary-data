@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>Apiary Sensor Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 2rem;
+      background-color: #f4f4f4;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-bottom: 1rem;
+      gap: 10px;
+    }
+
+    .chart-container {
+      width: 100%;
+      max-width: 1000px;
+      height: 500px;
+      margin: auto;
+      background: white;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      padding: 1rem;
+    }
+
+    canvas {
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+</head>
+<body>
+  <h1>Apiary Sensor Dashboard</h1>
+
+  <div class="controls">
+    <label for="hive">Hive:</label>
+    <select id="hive">
+      <option value="B">B</option>
+      <option value="C">C</option>
+      <option value="E">E</option>
+    </select>
+
+    <label for="source">Source:</label>
+    <select id="source">
+      <option value="BroodMinder">BroodMinder</option>
+      <option value="DIY">DIY</option>
+    </select>
+
+    <label for="metric">Metric:</label>
+    <select id="metric">
+      <option value="Hive Temperature">Hive Temperature</option>
+      <option value="Hive Humidity">Hive Humidity</option>
+      <option value="External Temperature">External Temperature</option>
+      <option value="Battery Life">Battery Life</option>
+      <option value="Hive Acoustics">Hive Acoustics</option>
+      <option value="External Pressure">External Pressure</option>
+    </select>
+
+    <label for="start">Start Date:</label>
+    <input type="date" id="start" value="2025-01-01" />
+
+    <label for="end">End Date:</label>
+    <input type="date" id="end" value="2025-02-01" />
+
+    <button onclick="loadData()">Load</button>
+  </div>
+
+  <div class="chart-container">
+    <canvas id="chart"></canvas>
+  </div>
+
+  <script>
+    let chart = null;
+
+    async function loadData() {
+      const hive = document.getElementById("hive").value;
+      const source = document.getElementById("source").value;
+      const metric = document.getElementById("metric").value;
+      const start = document.getElementById("start").value;
+      const end = document.getElementById("end").value;
+
+      const params = new URLSearchParams({ hive, source, metric, start, end });
+
+      try {
+        const res = await fetch(`/data?${params}`);
+        const data = await res.json();
+
+        if (!data.length) {
+          alert("No data returned. Try another metric or date range.");
+          return;
+        }
+
+        const labels = data.map(d => new Date(d.timestamp).toLocaleString());
+        const values = data.map(d => d.value);
+
+        const ctx = document.getElementById("chart").getContext("2d");
+
+        const yAxisLabel = {
+          "Hive Temperature": "Temperature (°C)",
+          "Hive Humidity": "Humidity (%)",
+          "Hive Acoustics": "Sound Level",
+          "External Temperature": "Ext Temp (°C)",
+          "External Pressure": "Pressure (mbar)",
+          "Battery Life": "Battery (%)"
+        }[metric] || metric;
+
+        if (chart) {
+          chart.destroy();
+        }
+
+        chart = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels: labels,
+            datasets: [{
+              label: metric,
+              data: values,
+              borderColor: "orange",
+              backgroundColor: "rgba(255,165,0,0.2)",
+              tension: 0.2,
+              fill: true,
+              pointRadius: 0.5
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: false,
+            plugins: {
+              legend: { position: "top" }
+            },
+            scales: {
+              x: {
+                title: { display: true, text: "Time" },
+                ticks: {
+                  maxRotation: 45,
+                  minRotation: 45,
+                  autoSkip: true,
+                  maxTicksLimit: 20
+                }
+              },
+              y: {
+                title: { display: true, text: yAxisLabel },
+                beginAtZero: true,
+                suggestedMax: Math.max(...values) * 1.2
+              }
+            }
+          }
+        });
+      } catch (err) {
+        console.error("Error loading data:", err);
+        alert("Failed to load data.");
+      }
+    }
+  </script>
+</body>
+</html>
