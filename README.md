@@ -33,18 +33,6 @@
 
 ---
 
-## Bonus Points Requested: 3
-
-- Completed requirements for 2 points:
-  - Proper data modeling and import for both BroodMinder and DIY
-  - Visual dashboard to explore time series trends
-- Additional features for the 3rd point:
-  - Metric + Source switching with dropdown filters
-  - Multi-hive support
-  - Eventual extensibility for future sensor types
-
----
-
 ## Screenshots of Visualizations
 
 ![Hive Temperature - BroodMinder Hive B](screenshots/hive_temp_broodminder_b.png)
